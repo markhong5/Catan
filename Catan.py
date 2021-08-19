@@ -94,14 +94,14 @@ class Catan(arcade.View):
 
         self.gameController = CatanController(self.board, self.graph, 2)
         #Goal: integrate nearly everything below me into the game controller
-        self.players = self.gameController.players
-        self.devCards = DEVCARDS
-        random.shuffle(self.devCards)
+        # self.players = self.gameController.players
+        # self.devCards = DEVCARDS
+        # random.shuffle(self.devCards)
         #FIXME: REMOVE THESE LINE OF CODE WHEN I CAN SPECIFY THE NUMBER OF PLAYERS
         # self.players.append(Player(arcade.color.BLUE))
         # self.players.append(Player(arcade.color.RED))
-        self.currentTurn = 1 #keeps track of the current turn, will loop around once it hits the last Player
-        self.currentPlayer = self.players[0]
+        # self.currentTurn = 1 #keeps track of the current turn, will loop around once it hits the last Player
+        # self.currentPlayer = self.players[0]
         #These flags are for the on_update() function, controling when an update occurs
         self.flags ={
             "endTurn":False,
@@ -123,7 +123,7 @@ class Catan(arcade.View):
             "devCardPhase":False,
             "selectDevCard":False,
         }
-        self.lengthOfSetUpPhase = 2
+        # self.lengthOfSetUpPhase = 2
         self.roadsToDraw = [] # stores the location of roads to draw
         self.settlementsToDraw = []
         self.citiesToDraw = []
@@ -172,10 +172,10 @@ class Catan(arcade.View):
                         node = self.graph.nodeMap[self.settlementMap[cord]]
 
 
-                        self.currentPlayer.placeSettlement(self.settlementMap[cord], self.graph, self.flags["setUpPhase"])
+                        self.gameController.currentPlayer.placeSettlement(self.settlementMap[cord], self.graph, self.flags["setUpPhase"])
                         print(f"placed Settlement at node {self.settlementMap[cord]}")
                         #FIXME perhaps this should be a named tuple?
-                        self.settlementsToDraw.append((x2, y2, 7, self.currentPlayer.color))
+                        self.settlementsToDraw.append((x2, y2, 7, self.gameController.currentPlayer.color))
                         self.flags["canPlaceSettlement"] = False
                         self.flags["placedSettlement"] = True
                         self.gameController.printed = False
@@ -185,7 +185,7 @@ class Catan(arcade.View):
                     print("Click on one of the nodes")
             except InvalidSettlementError as e:
                 print(e.message)
-                print(f"Player {self.currentTurn}, place a settlement")
+                print(f"Player {self.gameController.currentTurn}, place a settlement")
 
         if self.flags["canPlaceRoad"]:
             for cord in self.settlementMap.keys():
@@ -199,10 +199,11 @@ class Catan(arcade.View):
                     node1 = self.settlementMap[self.roadBuffer[0]]
                     node2 = self.settlementMap[self.roadBuffer[1]]
 
-                    roadNode = self.currentPlayer.getRoadFromTwoSettlementNodes(node1, node2, self.graph)
-                    self.currentPlayer.placeRoad(roadNode, self.graph)
+                    currentPlayer = self.gameController.currentPlayer
+                    roadNode = currentPlayer.getRoadFromTwoSettlementNodes(node1, node2, self.graph)
+                    currentPlayer.placeRoad(roadNode, self.graph)
                     self.roadsToDraw.append(
-                        (self.roadBuffer[0], self.roadBuffer[1], self.currentPlayer.color))
+                        (self.roadBuffer[0], self.roadBuffer[1], currentPlayer.color))
                     self.flags["canPlaceRoad"] = False
                     self.flags["placedRoad"] = True
                     self.gameController.printed = False
@@ -211,6 +212,7 @@ class Catan(arcade.View):
                     print(e.message)
                     print("Click another 2 Roads")
                 self.roadBuffer = []
+        #FIXME: REMOVE currentPlayer When I get there
         if self.flags["upgradeCity"]:
             try:
                 for cord in self.settlementMap.keys():
@@ -227,7 +229,7 @@ class Catan(arcade.View):
                     print("Click on one of the Cities")
             except InvalidSettlementError as e:
                 print(e.message)
-                print(f"Player {self.currentTurn}, place a City")
+                print(f"Player {self.gameController.currentTurn}, place a City")
                 self.flags["upgradeCity"] = False
 
     def on_update(self, delta_time):
@@ -236,6 +238,7 @@ class Catan(arcade.View):
             self.gameController.setUpPhase(self.flags)
             #self._setUpPhase()
         else:
+            self.gameController.mainGame(self.flags, self.ui_manager.find_by_id("button"))
             # self._mainGame()
 
     def on_key_press(self, symbol: int, modifiers: int):
