@@ -41,12 +41,13 @@ class InvalidTradeError(Exception):
 
 #Fixme Add Victory point gain
 class Player:
-    def __init__(self, color):
+    def __init__(self, color, name = ""):
         #Fixme: I don't use these first 3 variables
         self.totalSettlements = 5
         self.totalCities = 4
         self.totalRoads = 15
         self.color = color
+        self.name = name
         self.settlementNodesOwned = []
         self.roadNodesOwened = []
         self.totalResources = copy.deepcopy(BASE_RESOURCES)

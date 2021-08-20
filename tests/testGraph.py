@@ -298,6 +298,29 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(self.graph.nodeMap[119].trade, self.board[6][2].trade)
         self.assertEqual(self.graph.nodeMap[121].trade, self.board[6][2].trade)
 
+    def testTilesHaveTheCorrectVertices(self):
+        self.assertEqual(set([0, 2, 4, 19, 21, 23]), self.board[1][1].vertices)
+        self.assertEqual(set([6, 8, 4, 25, 27, 23]), self.board[1][2].vertices)
+        self.assertEqual(set([8, 27, 29, 31, 10, 12]), self.board[1][3].vertices)
 
+        self.assertEqual(set([17, 41, 43, 19, 21, 45]), self.board[2][1].vertices)
+        self.assertEqual(set([21, 23, 25, 45, 47, 49]), self.board[2][2].vertices)
+        self.assertEqual(set([25, 27, 29, 49, 51, 53]), self.board[2][3].vertices)
+        self.assertEqual(set([29, 31, 33, 53, 55, 57]), self.board[2][4].vertices)
+
+        self.assertEqual(set([39, 41, 43, 66, 68, 70 ]), self.board[3][1].vertices)
+        self.assertEqual(set([43, 45, 47, 70, 72, 74]), self.board[3][2].vertices)
+        self.assertEqual(set([47, 49, 51, 74, 76, 78]), self.board[3][3].vertices)
+        self.assertEqual(set([51, 53, 55, 78, 80, 82]), self.board[3][4].vertices)
+        self.assertEqual(set([55, 57, 59, 82, 84, 86]), self.board[3][5].vertices)
+
+        self.assertEqual(set([68, 70, 72, 92, 94, 96]), self.board[4][1].vertices)
+        self.assertEqual(set([72, 74, 76, 96, 98, 100]), self.board[4][2].vertices)
+        self.assertEqual(set([76, 78, 80, 100, 102, 104]), self.board[4][3].vertices)
+        self.assertEqual(set([80, 82, 84, 104, 106, 108]), self.board[4][4].vertices)
+
+        self.assertEqual(set([94, 96, 98, 113, 115, 117]), self.board[5][1].vertices)
+        self.assertEqual(set([98, 100, 102, 117, 119, 121]), self.board[5][2].vertices)
+        self.assertEqual(set([102, 104, 106, 121, 123, 125]), self.board[5][3].vertices)
 if __name__ == '__main__':
     unittest.main()

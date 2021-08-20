@@ -107,6 +107,7 @@ class Catan(arcade.View):
             "endTurn":False,
             "startTurn":True,
             "setUpPhase": True,
+            "robber" : False,
             "canPlaceSettlement":False,
             "placedSettlement":False,
             "canPlaceRoad": False,
@@ -128,8 +129,8 @@ class Catan(arcade.View):
         self.settlementsToDraw = []
         self.citiesToDraw = []
         self.roadBuffer = [] #stores cordinates of where a road should be placed
-        self.playerToTrade = None
-        self.tradeBuffer = []
+        # self.playerToTrade = None
+        # self.tradeBuffer = []
         self.ui_manager = arcade.gui.UIManager()
 
 
@@ -169,9 +170,7 @@ class Catan(arcade.View):
                 for cord in self.settlementMap.keys():
                     x2, y2 = cord
                     if math.sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2)) < 7:
-                        node = self.graph.nodeMap[self.settlementMap[cord]]
-
-
+                        # node = self.graph.nodeMap[self.settlementMap[cord]]
                         self.gameController.currentPlayer.placeSettlement(self.settlementMap[cord], self.graph, self.flags["setUpPhase"])
                         print(f"placed Settlement at node {self.settlementMap[cord]}")
                         #FIXME perhaps this should be a named tuple?
@@ -219,10 +218,11 @@ class Catan(arcade.View):
                     x2, y2 = cord
                     if math.sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2)) < 7:
                         node = self.graph.nodeMap[self.settlementMap[cord]]
-                        self.currentPlayer.upgradeSettlementToCity(node)
+                        currentPlayer = self.gameController.currentPlayer
+                        currentPlayer.upgradeSettlementToCity(node)
                         print(f"placed City at node {self.settlementMap[cord]}")
                         #FIXME perhaps this should be a named tuple?
-                        self.citiesToDraw.append((x2, y2, 15, self.currentPlayer.color))
+                        self.citiesToDraw.append((x2, y2, 15, currentPlayer.color))
                         self.flags["upgradeCity"] = False
                         break
                 else:
@@ -603,7 +603,7 @@ class Catan(arcade.View):
             hexagonGen = HexagonGenerator(HEXAGON_SIZE, newX, newY)
             hexagon = hexagonGen()
             hexagonPoints = list(hexagon)
-            self._drawTile(hexagonPoints, self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart))
+            self._drawTile(hexagonPoints, self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart), self._getTileIsRobber(boardStart))
             self.tileCordinates[totalTiles] = hexagonPoints
             totalTiles += 1
             boardStart[1] += 1
@@ -612,7 +612,7 @@ class Catan(arcade.View):
                 hexagon = hexagonGen()
                 cords = list(hexagon)
                 # arcade.draw_polygon_outline(cords, arcade.color.BLACK)
-                self._drawTile(cords,self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart))
+                self._drawTile(cords,self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart),self._getTileIsRobber(boardStart))
                 self.tileCordinates[totalTiles] = cords
                 totalTiles += 1
                 boardStart[1] += 1
@@ -633,7 +633,7 @@ class Catan(arcade.View):
             hexagon = hexagonGen()
             hexagonPoints = list(hexagon)
             # arcade.draw_polygon_outline(hexagonPoints, arcade.color.BLACK)
-            self._drawTile(hexagonPoints, self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart))
+            self._drawTile(hexagonPoints, self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart),self._getTileIsRobber(boardStart))
 
             self.tileCordinates[totalTiles] = hexagonPoints
             totalTiles += 1
@@ -642,7 +642,7 @@ class Catan(arcade.View):
                 hexagonGen = HexagonGenerator(HEXAGON_SIZE, newX + (hexagonPoints[2][0] - hexagonPoints[0][0]) * i, newY)
                 hexagon = hexagonGen()
                 cords = list(hexagon)
-                self._drawTile(cords,self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart))
+                self._drawTile(cords,self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart),self._getTileIsRobber(boardStart))
                 boardStart[1] += 1
                 self.tileCordinates[totalTiles] = cords
                 totalTiles += 1
@@ -679,17 +679,24 @@ class Catan(arcade.View):
     def _getHexCenter(self, cord1, cord2):
         return (cord1[0], cord1[1] - (cord1[1] - cord2[1]) / 2)
 
-    def _drawTile(self, vertexes, color, text):
+    def _drawTile(self, vertexes, color, text, isRobber = False):
         arcade.draw_polygon_filled(vertexes, color)
         arcade.draw_polygon_outline(vertexes, arcade.color.BLACK)
 
         hexCenter = self._getHexCenter((vertexes[1][0], vertexes[1][1]),
                                        (vertexes[4][0], vertexes[4][1]))
-        arcade.draw_text(text, hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", anchor_x="center",
-                         anchor_y="center")
+        if not isRobber:
+            arcade.draw_text(text, hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", anchor_x="center",
+                             anchor_y="center")
+        else:
+            arcade.draw_text("R", hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", anchor_x="center",
+                             anchor_y="center")
 
     def _getResourceTileColor(self, boardPosition):
         return RESOURCECOLOR[self.board.board[boardPosition[0]][boardPosition[1]].resource]
+
+    def _getTileIsRobber(self, boardPosition):
+        return self.board.board[boardPosition[0]][boardPosition[1]].isRobber
 
     def _getResourceTileNum(self, boardPosition):
         return str(self.board.board[boardPosition[0]][boardPosition[1]].num)

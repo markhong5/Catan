@@ -4,6 +4,10 @@ class ResourceTile:
         self.resource = resource
         self.num = resourceVal
         self.isRobber = isRobber
+        self.vertices = set()
+
+    def addVertice(self, vertice):
+        self.vertices.add(vertice)
 
     def __repr__(self):
         return f"Tile: {self.resource} || Num: {self.num}"

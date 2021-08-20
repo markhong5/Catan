@@ -49,7 +49,14 @@ class Board:
         self.nodeGraph = SettlementGraph(self.board, [1,1], (5,3))
         self.robberLocation = None
         self._findRobber()
+        self._setRobber(self.robberLocation)
+        self.tileToVertices = {}
 
+        self.mapTileToSettlements(startingTile=[1, 1], startingTop=0, startingBottom=19, length=3)
+        self.mapTileToSettlements(startingTile=[2, 1], startingTop=17, startingBottom=41, length=4)
+        self.mapTileToSettlements(startingTile=[3, 1], startingTop=39, startingBottom=66, length=5)
+        self.mapTileToSettlements(startingTile=[4, 1], startingTop=68, startingBottom=92, length=4)
+        self.mapTileToSettlements(startingTile=[5, 1], startingTop=94, startingBottom=113, length=3)
 
 
     def placeRobber(self, cord):
@@ -64,6 +71,20 @@ class Board:
         self.board[self.robberLocation[0]][self.robberLocation[1]].isRobber = False
         self.board[cord[0]][cord[1]].isRobber = True
         self.robberLocation = cord
+
+    def mapTileToSettlements(self, startingTile=[1, 1], startingTop=0, startingBottom=19, length=3):
+
+        top = startingTop
+        bottom = startingBottom
+        for y in range(length):
+            tile = self.board[startingTile[0]][startingTile[1] + y]
+            for i in range(3):
+                tile.addVertice(top)
+                tile.addVertice(bottom)
+                top += 2
+                bottom += 2
+            top -= 2
+            bottom -= 2
 
     def __setUpResourceTiles(self, amount) -> [ResourceTile]:
         row = []
@@ -119,6 +140,12 @@ class Board:
                 for y, tile in enumerate(row):
                     if not isinstance(tile, OceanTile) and tile.resource == "desert":
                         self.robberLocation = [i, y]
+    def _setRobber(self, boardPosition):
+        self.board[self.robberLocation[0]][self.robberLocation[1]].isRobber = False
+        self.board[boardPosition[0]][ boardPosition[1]].isRobber = True
+        self.robberLocation = boardPosition
+
+
 
 
     def printBoard(self):

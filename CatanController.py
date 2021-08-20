@@ -1,13 +1,36 @@
 import random
 import math
-from Board import Board, RESOURCETYPES
+from Board import Board, RESOURCETYPES, InvalidRobberError
 import arcade
 from Player import *
 DEVCARDS = (["Knight"] * 14) + (["Victory Points"] * 5) + (["Road Building"] * 2) + (["Monopoly"] * 2) + (["YearOfPlenty"] * 2)
 STARTOFTURNSTATEMENT = "Press T for Trade, B for Build, D for devCards, or N to go to the next turn"
+BOARDTOCORDS ={ #Created solely to find players to steal from when a robber is moved
+    (1,1): 0,
+    (1,2) : 1,
+    (1,3) : 2,
+    (2,1) : 3,
+    (2,2): 4,
+    (2,3): 5,
+    (2,4): 6,
+    (3,1): 7,
+    (3, 2): 8,
+    (3, 3): 9,
+    (3, 4): 10,
+    (3, 5): 11,
+    (4,1):12,
+    (4,2):13,
+    (4,3):14,
+    (4,4):15,
+    (5,1):16,
+          (5,2): 17,
+           (5,3): 18,
+}
 DEBUG = True
 class CatanController:
     def __init__(self, board, graph, numPlayers=2):
+        self.board = board
+        self.graph = graph
         self.players = self._getPlayers(numPlayers)
         self.devCards = DEVCARDS
         random.shuffle(self.devCards)
@@ -68,6 +91,8 @@ class CatanController:
             print(f"Player {self.currentTurn}, it is your turn")
             roll = random.randint(1, 6) + random.randint(1, 6)
             print(f"Player {self.currentTurn} rolled a {roll}")
+            if roll == 7:
+                flags["robber"] = True
             print("Collecting resources...")
             for player in self.players:
                 player.collectResources(roll)
@@ -75,9 +100,14 @@ class CatanController:
             print(STARTOFTURNSTATEMENT)
             flags["startTurn"] = False
             # self.flags["tradePhase"] = True
+            if flags["robber"]:
+                print(f"Player {self.currentTurn}, where do you want to place the robber?")
+            #Follows the board notation, with the top left most tile being 1,1
         if textButton.clickedButton:
             text = self._formatTextButton(textButton.text)
-            if text == "n" and flags["acceptTrade"] == False:
+            if flags["robber"]:
+                self._moveRobber(flags, text)
+            elif text == "n" and not flags["acceptTrade"]:
                 print("End Turn\n")
                 self.endTurn(flags)
             elif text == "t" or flags["tradePhase"]:
@@ -94,9 +124,11 @@ class CatanController:
                     self._playerTrade(flags, text)
                 else:
                     print("Do you want a PortTrade or PlayerTrade? (PT for port, P for player)")
+            elif text == "b" or flags["buildPhase"]:
+                flags["buildPhase"] = True
+                self._buildPhase(flags, text)
 
             textButton.resetButton()
-            pass
 
     def _playerTrade(self, flags, text):
         if not flags["choosePlayerPhase"]:
@@ -229,6 +261,73 @@ class CatanController:
                     print("must be in the form (sending:recieving)")
                     self._resetTradeFlags(flags)
 
+    def _buildPhase(self, flags, text):
+        #Build phase is the last phase, so the only thing you can do after building is play a dev card or end your turn
+        if flags["canPlaceRoad"] or flags["canPlaceSettlement"] or flags["upgradeCity"]:
+            pass
+        else:
+
+            if text == "road":
+                #Pay for road, else error
+                #Build a road
+                print("Building Road")
+                flags["canPlaceRoad"] = True
+            elif text == "settlement":
+                #Pay for settlement, else error
+                #Build a settlement
+                print("Building settlement")
+                flags["canPlaceSettlement"] = True
+            elif text == "city":
+                #Pay for city, else error
+                #Build a city
+                print("Building city")
+                flags["upgradeCity"] = True
+            elif text == "devcard":
+                #Pay for devCard, else error
+                #Build a devCard
+                print("giving devCard")
+                if len(self.devCards) > 0:
+                    devcard = self.devCards.pop(0)
+                    print(f"{devcard} recieved")
+                    if devcard == "Victory Point":
+                        self.currentPlayer.victoryPoints += 1
+                    else:
+                        self.currentPlayer.devCards.append(devcard)
+                    if devcard == "knight":
+                        self.currentPlayer.totalKnights += 1
+                else:
+                    print("Out of devCards")
+            else:
+                print("Do you want to build a road, settlement, city, or devCard?")
+
+    def _moveRobber(self, flags, text):
+        try:
+            #FIXME: instead of checking for cords, just allow the player to click on the tile where they want to move the
+            #robber
+            cords = text.split(",")
+            if self._validCords(cords):
+                x,y = int(cords[0]), int(cords[1])
+                self.board._setRobber([x,y])
+                print(f"Placed the robber at tile {[x,y]}")
+
+                #Find a player you can to steal from
+                players = self._findNeighboringPlayers((x, y))
+                if len(players) == 0:
+                    flags["robber"] = False
+                else:
+                    allPlayers = ""
+                    for player in players:
+                        allPlayers += "Player:" + player.name
+                        allPlayers += "\n"
+                    print(allPlayers)
+                    print("who do you want to steal from?")
+            else:
+                raise InvalidRobberError("Cords not within 1,1 or 5,3 ")
+
+        except (ValueError, InvalidRobberError) as e:
+            print(e.message)
+            print("Not valid tile location ie (1,1 or 2,3)")
+
     def endTurn(self, flags):
         self._resetFlags(flags)
         if self.currentTurn + 1 <= len(self.players):
@@ -237,7 +336,32 @@ class CatanController:
             self.currentTurn = 1
         self.currentPlayer = self.players[self.currentTurn - 1]
 
+    def _findNeighboringPlayers(self, cords):
+        surrondingnodes = self.board.board[cords[0]][cords[1]].vertices
+        surrondingSettlements = []
+        for node in surrondingnodes:
+            surrondingSettlements.append(self.graph.nodeMap[node])
+        surrondingPlayers = []
 
+        #For every player, check to see if their settlements is a part of the surronding ndoes
+        for player in self.players:
+            if player != self.currentPlayer:
+                for settlement in player.settlementNodesOwned:
+                    if settlement in surrondingSettlements:
+                        surrondingPlayers.append(player)
+                        break
+        return surrondingPlayers
+
+
+
+    def _validCords(self, cords):
+        xCords = ["1", "2", "3", "4", "5"]
+        ycords = {"1":3, "2":4, "3":5, "4":4, "5":3}
+        if len(cords) == 2 and len(cords[0]) == 1 and len(cords[1]) == 1 and cords[0] in xCords and cords[1] in xCords\
+                and int(cords[1]) <= ycords[cords[0]]:
+            return True
+        else:
+            return False
     def _formatTextButton(self, text):
             formattedText = text.lower().strip()
             return formattedText
@@ -257,8 +381,13 @@ class CatanController:
         flags["acceptTrade"] = False
         flags["choosePortPhase"] = False
         flags["makeTradePhase"] = False
+        #build flags
+        flags["canPlaceRoad"] = False
+        flags["canPlaceSettlement"] = False
+        flags["upgradeCity"] = False
         self.printed = False
         self.tradeBuffer.clear()
+        flags["robber"] = False
     def _resetTradeFlags(self, flags):
         flags["tradePhase"] = False
         flags["playerTrade"] = False
@@ -273,6 +402,6 @@ class CatanController:
     def _getPlayers(self, numPlayers):
         #FIXME actually write this function, for now manually add players
         playerList = []
-        playerList.append(Player(arcade.color.BLUE))
-        playerList.append(Player(arcade.color.RED))
+        playerList.append(Player(arcade.color.BLUE, "Blue"))
+        playerList.append(Player(arcade.color.RED, "Red"))
         return playerList
