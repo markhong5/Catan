@@ -11,7 +11,6 @@ HEXAGON_SIZE = 50
 HEXAGON_XOFFSET = 350
 HEXAGON_YOFFSET = 650
 SCREEN_TITLE = "Catan"
-WIDTH_TEXT = 1
 RESOURCECOLOR= {
     "forest": arcade.color.GREEN,
     "hill":arcade.color.BROWN,
@@ -28,10 +27,22 @@ PLAYERCOLORS = {
 }
 DEBUG = False
 """
-get the uimanager working again
+TODO: Clean and comment code
+#FIXME: Add port functionality and draw the ports on the map
+    #Done, but could use tests to make sure that the ports shown are actually the correct ports
+    #Done
+#FIXME: Add the ability to trade to others
+    #Done
+#FIXME: Add the ability to build a settlement/road/devcard/city
+    #need costs for buildings and to go back in case there is an invalid trade
+    #need to add dev cards
+#FIXME: Add dev cards and their functionality
+#FIXME: Make the robber visible on the tiles (and allow the player to choose where to place the robber)
+#FIXME: change the color of 6 and 8 to a red text
+#FIXME: allow My version of CATAN to be played over the internet (LAST THING TO DO)
 """
 DEVCARDS = (["Knight"] * 14) + (["Victory Points"] * 5) + (["Road Building"] * 2) + (["Monopoly"] * 2) + (["YearOfPlenty"] * 2)
-class getTextButton(arcade.gui.UIFlatButton):
+class getTextButton(arcade.gui.UIGhostFlatButton):
     """
     This button is linked to a UIInputBox, which will save the text inputed after click
     """
@@ -128,13 +139,13 @@ class Catan(arcade.View):
         This is setting up my Gui: my text box and button to get the text
         :return:
         """
-        # self.ui_manager.purge_ui_elements()
+        self.ui_manager.purge_ui_elements()
         #Todo get rid of these preset values
-        uiInputBox = arcade.gui.UIInputText(center_x=300, center_y=100,width=600,text="", id=1)
+        uiInputBox = arcade.gui.UIInputBox(center_x=300, center_y=100,width=600,text="", id=1)
         uiInputBox.cursor_index = 20
-        self.ui_manager.add(uiInputBox)
+        self.ui_manager.add_ui_element(uiInputBox)
         textButton = getTextButton(center_x= 650, center_y=100, width=100, input_box=uiInputBox)
-        self.ui_manager.add(textButton)
+        self.ui_manager.add_ui_element(textButton)
 
     def on_draw(self):
         arcade.start_render()
@@ -675,9 +686,11 @@ class Catan(arcade.View):
         hexCenter = self._getHexCenter((vertexes[1][0], vertexes[1][1]),
                                        (vertexes[4][0], vertexes[4][1]))
         if not isRobber:
-            arcade.draw_text(text, hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", width=WIDTH_TEXT)
+            arcade.draw_text(text, hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", anchor_x="center",
+                             anchor_y="center")
         else:
-            arcade.draw_text("R", hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", width=WIDTH_TEXT)
+            arcade.draw_text("R", hexCenter[0], hexCenter[1], arcade.color.BLACK, align="center", anchor_x="center",
+                             anchor_y="center")
 
     def _getResourceTileColor(self, boardPosition):
         return RESOURCECOLOR[self.board.board[boardPosition[0]][boardPosition[1]].resource]
@@ -777,7 +790,7 @@ class Catan(arcade.View):
         arcade.draw_line(cord1[0], cord1[1], centerX, centerY, arcade.color.BLACK, 3)
         arcade.draw_line(cord2[0], cord2[1], centerX, centerY, arcade.color.BLACK, 3)
         arcade.draw_text(trade, centerX + offsetTextx, centerY + offsetTexty, arcade.color.BLACK, align="center", anchor_x="center",
-                         anchor_y="center", width=WIDTH_TEXT)
+                         anchor_y="center")
 
     def _drawAllPorts(self):
         """
