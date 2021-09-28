@@ -21,14 +21,18 @@ RESOURCEAMOUNT= {
 PORTTRADES = ["3:1","3:1","3:1","3:1","lumber 2:1", "brick 2:1", "ore 2:1", "wheat 2:1", "livestock 2:1"]
 TILENUMS = [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]
 class InvalidRobberError(Exception):
-    def __init__(self, message = "Invalid Robber Position"):
+    def __init__(self, message="Invalid Robber Position"):
         self.message = message
         super().__init__(self.message)
     pass
 
 class Board:
+    """
+    Sets up the Catan board, placing the ports, tiles, tilenums, and resources.
+    It made to work up to 4 players
+
+    """
     def __init__(self):
-        #this is a 4 player board
         self.board = []
         self.copyNums = TILENUMS[:]
         self.numOfResources = RESOURCEAMOUNT.copy()

@@ -3,7 +3,8 @@ import math
 from Board import Board, RESOURCETYPES, InvalidRobberError
 import arcade
 from Player import *
-DEVCARDS = (["Knight"] * 14) + (["Victory Points"] * 5) + (["Road Building"] * 2) + (["Monopoly"] * 2) + (["YearOfPlenty"] * 2)
+DEVCARDS = (["Knight"] * 14) + (["Victory Points"] * 5) + (["Road Building"] * 2) +\
+           (["Monopoly"] * 2) + (["YearOfPlenty"] * 2)
 STARTOFTURNSTATEMENT = "Press T for Trade, B for Build, D for devCards, or N to go to the next turn"
 BOARDTOCORDS ={ #Created solely to find players to steal from when a robber is moved
     (1,1): 0,
