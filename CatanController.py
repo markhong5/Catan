@@ -1,8 +1,8 @@
 import random
 import math
-from Board import Board, RESOURCETYPES, InvalidRobberError
+from game_mechanics.Board import Board, RESOURCETYPES, InvalidRobberError
 import arcade
-from Player import *
+from game_mechanics.Player import *
 DEVCARDS = (["Knight"] * 14) + (["Victory Points"] * 5) + (["Road Building"] * 2) +\
            (["Monopoly"] * 2) + (["YearOfPlenty"] * 2)
 STARTOFTURNSTATEMENT = "Press T for Trade, B for Build, D for devCards, or N to go to the next turn"

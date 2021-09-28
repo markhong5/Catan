@@ -1,6 +1,6 @@
-from Board import Board, OceanTile
-from Player import Player, InvalidRoadError, InvalidSettlementError
+from game_mechanics.Board import Board, OceanTile
 
+#outdated version of Catan. Was a text only version
 SHORTHANDFORRESOURCES ={
     "forest":"FO",
     "hill":"H",
@@ -11,8 +11,6 @@ SHORTHANDFORRESOURCES ={
 }
 
 class CatanText:
-    #FIXME For final Catan Product, needs to display roads placed and ports
-    #FIXME Need to change what a star is when a settlement is placed
     #should I just start developing the pygameArcade version? YES
     def __init__(self):
         self.board = Board()
@@ -21,14 +19,6 @@ class CatanText:
         self.makeBoard()
 
     def makeBoard(self):
-        #FIXME Add Top Ocean once I make ports and trading
-        # topRow = ""
-        # for ocean in self.catanBoard[0]:
-        #     if topRow == "":
-        #         topRow = self.__topOcean()
-        #     else:
-        #         topRow = self.__joinStrHorizontally(topRow, self.__topOcean())
-        # self.strBoard += topRow
         row = ""
         for i, tile in enumerate(self.catanBoard[1]):
             if isinstance(tile, OceanTile) and i == 0:

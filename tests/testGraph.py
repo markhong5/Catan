@@ -1,6 +1,6 @@
 import unittest
 
-from Board import Board
+from game_mechanics.Board import Board
 
 
 class TestGraph(unittest.TestCase):

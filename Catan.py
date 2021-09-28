@@ -2,8 +2,8 @@ import random
 import arcade
 import arcade.gui
 import math
-from Board import Board, RESOURCETYPES
-from Player import *
+from game_mechanics.Board import Board, RESOURCETYPES
+from game_mechanics.Player import *
 from CatanController import CatanController
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800

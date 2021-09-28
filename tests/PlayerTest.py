@@ -1,7 +1,7 @@
 from Player import Player, RESOURCETYPES
 from Player import InvalidSettlementError
 from Player import InvalidRoadError
-from Board import Board
+from game_mechanics.Board import Board
 import unittest
 
 class PlayerTest(unittest.TestCase):

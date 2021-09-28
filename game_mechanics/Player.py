@@ -1,11 +1,7 @@
-from ResourceTile import ResourceTile
-from SettlementGraph import SettlementGraph
+#from ResourceTile import ResourceTile
+from .SettlementGraph import SettlementGraph
 import copy
-"""
-FIXME make a Catan file, where the set up phase of the game is played
-Then, write tests to make sure that everything works in the player class 
-Also, need to set up the trades and ports in the game
-"""
+from .Config import RESOURCETYPES
 BASE_RESOURCES = {
     "lumber": 0,
     "brick": 0,
@@ -13,14 +9,7 @@ BASE_RESOURCES = {
     "wheat": 0,
     "livestock": 0
 }
-RESOURCETYPES = {
-    "forest":"lumber",
-    "hill":"brick",
-    "mountain":"ore",
-    "farm":"wheat",
-    "grassland":"livestock",
-    "desert": "empty"
-}
+
 class InvalidSettlementError(Exception):
     def __init__(self, message = "Invalid Settlement Position"):
         self.message = message
@@ -41,6 +30,11 @@ class InvalidTradeError(Exception):
 
 #Fixme Add Victory point gain
 class Player:
+    """
+    Represents a Catan player
+    They can have resources, devcards, settlements/cities, roads, and victory points
+
+    """
     def __init__(self, color, name = ""):
         #Fixme: I don't use these first 3 variables
         self.totalSettlements = 5
