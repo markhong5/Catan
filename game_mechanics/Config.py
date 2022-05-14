@@ -8,3 +8,11 @@ RESOURCETYPES = {
     "grassland":"livestock",
     "desert": "empty"
 }
+
+BASE_RESOURCES = {
+    "lumber": 0,
+    "brick": 0,
+    "ore": 0,
+    "wheat": 0,
+    "livestock": 0
+}

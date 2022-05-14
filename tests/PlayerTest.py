@@ -1,6 +1,6 @@
-from Player import Player, RESOURCETYPES
-from Player import InvalidSettlementError
-from Player import InvalidRoadError
+from game_mechanics.Player import Player, RESOURCETYPES
+from game_mechanics.Player import InvalidSettlementError
+from game_mechanics.Player import InvalidRoadError
 from game_mechanics.Board import Board
 import unittest
 

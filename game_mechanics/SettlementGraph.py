@@ -1,11 +1,6 @@
 from .ResourceTile import ResourceTile
 from .OceanTile import OceanTile
 from .SettlementNode import SettlementNode
-class AdjNode:
-    """"""
-    def __init__(self, val):
-        self.vertex = val
-        self.next = None
 
 class SettlementGraph:
     """Graph that connects the roads/settlements with the tiles on the board"""

@@ -141,7 +141,7 @@ class Board:
 
     def _setUpOceanRow(self, amount):
         """
-        aAme as set up Resource row, but with only ocean tiles
+        row is set up as Resource row, but with only ocean tiles
         :param amount: number of tiles
         :return: [OceanTiles...]
         """

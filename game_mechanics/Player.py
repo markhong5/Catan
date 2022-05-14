@@ -1,29 +1,23 @@
-#from ResourceTile import ResourceTile
+import random
+
 from .SettlementGraph import SettlementGraph
 import copy
-from .Config import RESOURCETYPES
-BASE_RESOURCES = {
-    "lumber": 0,
-    "brick": 0,
-    "ore": 0,
-    "wheat": 0,
-    "livestock": 0
-}
+from .Config import RESOURCETYPES, BASE_RESOURCES
 
 class InvalidSettlementError(Exception):
-    def __init__(self, message = "Invalid Settlement Position"):
+    def __init__(self, message="Invalid Settlement Position"):
         self.message = message
         super().__init__(self.message)
     pass
 
 class InvalidRoadError(Exception):
-    def __init__(self, message = "Invalid Road Position"):
+    def __init__(self, message="Invalid Road Position"):
         self.message = message
         super().__init__(self.message)
     pass
 
 class InvalidTradeError(Exception):
-    def __init__(self, message = "Invalid Road Position"):
+    def __init__(self, message="Invalid Road Position"):
         self.message = message
         super().__init__(self.message)
     pass
@@ -33,9 +27,8 @@ class Player:
     """
     Represents a Catan player
     They can have resources, devcards, settlements/cities, roads, and victory points
-
     """
-    def __init__(self, color, name = ""):
+    def __init__(self, color, name=""):
         #Fixme: I don't use these first 3 variables
         self.totalSettlements = 5
         self.totalCities = 4
@@ -50,6 +43,14 @@ class Player:
         self.totalKnights = 0
 
     def placeSettlement(self, locationOfSettlement:int, nodegraph:SettlementGraph, startOfGame=False):
+        """
+        Places a settlement if it's a valid location on the board, not already owned, and at least 1 settlemnet node
+        away from any other settlement
+        :param locationOfSettlement:
+        :param nodegraph:
+        :param startOfGame:
+        :return:
+        """
         #Check that it is a valid node
         if locationOfSettlement < 0 or locationOfSettlement >= len(nodegraph.graph):
             raise InvalidSettlementError(f"Settlement position {locationOfSettlement} is not within the range 0 and "
@@ -76,6 +77,12 @@ class Player:
         self.victoryPoints += 1
 
     def placeRoad(self, locationOfRoad:int, nodegraph:SettlementGraph):
+        """
+        similar to place settlement, places a road down when it is a valid board posiiton, and not already owned
+        :param locationOfRoad:
+        :param nodegraph:
+        :return:
+        """
         #Check that it is a valid node
         if locationOfRoad < 0 or locationOfRoad >= len(nodegraph.graph):
             raise InvalidRoadError(f"Road position {locationOfRoad} is not within the range 0 and "
@@ -96,12 +103,24 @@ class Player:
         self.roadNodesOwened.append(nodegraph.nodeMap[locationOfRoad])
 
     def getRoadFromTwoSettlementNodes(self, node1, node2, nodegraph):
+        """
+        finds a road between 2 settlements
+        :param node1:
+        :param node2:
+        :param nodegraph:
+        :return:
+        """
         val = list(nodegraph.graph[node1] & nodegraph.graph[node2])
         if len(val) != 1:
             raise InvalidRoadError(f"node {node1} and node {node2} do not have a valid node between them")
         return val[0]
 
     def collectResources(self, num):
+        """
+        the player collects the resources from the settlements he owns
+        :param num:
+        :return:
+        """
         for settlement in self.settlementNodesOwned:
             for resource in settlement.resources:
                 if resource.isRobber == False and num == resource.num:
@@ -111,6 +130,11 @@ class Player:
                         self.totalResources[RESOURCETYPES[resource.resource]] += 1
 
     def upgradeSettlementToCity(self, settlementNode):
+        """
+        will upgrade a settlement node into a city node
+        :param settlementNode:
+        :return:
+        """
         for settlement in self.settlementNodesOwned:
             if settlementNode == settlement:
                 if not settlement.isCity:
@@ -166,7 +190,13 @@ class Player:
             self.totalResources[resource[0]] += resource[1]
     #
     def portTrade(self, trade, sending, recieving):
-
+        """
+        facilitates a port trade depending on the type of trade
+        :param trade:
+        :param sending:
+        :param recieving:
+        :return:
+        """
         if sending not in self.totalResources or recieving not in self.totalResources:
             raise InvalidTradeError(f"{sending} or {recieving} is not a valid resource type to trade")
 
@@ -190,6 +220,12 @@ class Player:
 
 
     def __noAdjacentOwenedSettlements(self, locationOfSettlement, nodegraph):
+        """
+        checks if there is an adjacently owned settlement
+        :param locationOfSettlement:
+        :param nodegraph:
+        :return:
+        """
         adjacentRoads = nodegraph.graph[locationOfSettlement]
 
         for road in adjacentRoads:
@@ -202,6 +238,12 @@ class Player:
         return True
 
     def __roadConnected(self, locationOfSettlement, nodegraph):
+        """
+        checks if the roads are connected
+        :param locationOfSettlement:
+        :param nodegraph:
+        :return:
+        """
         adjacentRoads = nodegraph.graph[locationOfSettlement]
         for road in adjacentRoads:
             roadnode = nodegraph.nodeMap[road]
@@ -210,6 +252,12 @@ class Player:
         return False
 
     def __owensConnectedRoadSettlement(self, locationOfRoad, nodegraph):
+        """
+        checks if the player owns a connecting road to one of there settlements
+        :param locationOfRoad:
+        :param nodegraph:
+        :return:
+        """
         adjacentSettlements = nodegraph.graph[locationOfRoad]
 
         for settlement in adjacentSettlements:
@@ -226,3 +274,14 @@ class Player:
                         return True
 
         return False
+
+    def stolen(self):
+        resources = ["lumber", "brick", "ore", "wheat", "livestock"]
+        while resources != []:
+            to_steal_resource = random.choice(resources)
+            if self.totalResources[to_steal_resource] > 0:
+                self.totalResources[to_steal_resource] -= 1
+                return to_steal_resource
+            else:
+                resources.remove(to_steal_resource)
+        return -1

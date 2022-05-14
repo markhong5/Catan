@@ -6,29 +6,12 @@ from game_mechanics.Player import *
 DEVCARDS = (["Knight"] * 14) + (["Victory Points"] * 5) + (["Road Building"] * 2) +\
            (["Monopoly"] * 2) + (["YearOfPlenty"] * 2)
 STARTOFTURNSTATEMENT = "Press T for Trade, B for Build, D for devCards, or N to go to the next turn"
-BOARDTOCORDS ={ #Created solely to find players to steal from when a robber is moved
-    (1,1): 0,
-    (1,2) : 1,
-    (1,3) : 2,
-    (2,1) : 3,
-    (2,2): 4,
-    (2,3): 5,
-    (2,4): 6,
-    (3,1): 7,
-    (3, 2): 8,
-    (3, 3): 9,
-    (3, 4): 10,
-    (3, 5): 11,
-    (4,1):12,
-    (4,2):13,
-    (4,3):14,
-    (4,4):15,
-    (5,1):16,
-          (5,2): 17,
-           (5,3): 18,
-}
+
 DEBUG = True
 class CatanController:
+    """
+    Handles all the game mechanics for Catan
+    """
     def __init__(self, board, graph, numPlayers=2):
         self.board = board
         self.graph = graph
@@ -42,6 +25,7 @@ class CatanController:
         self.playerToTrade = None
         self.tradeBuffer = []
         self.printed = False
+        self.player_to_steal_buffer = []
 
 
     def setUpPhase(self, flags):
@@ -70,6 +54,12 @@ class CatanController:
             flags["setUpPhase"] = False
 
     def endTurnSetUP(self, flags):
+        """
+        During setup, there is a snake turn system. Ex: 3 players have this set up
+        1 -> 2 -> 3 -> 3 -> 2 -> 1
+        :param flags:
+        :return:
+        """
         self._resetFlags(flags)
         if self.lengthOfSetUpPhase == 2:
             if self.currentTurn + 1 <= len(self.players):
@@ -100,12 +90,11 @@ class CatanController:
             print(f"Player {self.currentTurn}, resources: {self.currentPlayer.totalResources}")
             print(STARTOFTURNSTATEMENT)
             flags["startTurn"] = False
-            # self.flags["tradePhase"] = True
             if flags["robber"]:
                 print(f"Player {self.currentTurn}, where do you want to place the robber?")
             #Follows the board notation, with the top left most tile being 1,1
         if textButton.clickedButton:
-            text = self._formatTextButton(textButton.text)
+            text = self._formatTextButton(textButton.text) #turns text into lower case
             if flags["robber"]:
                 self._moveRobber(flags, text)
             elif text == "n" and not flags["acceptTrade"]:
@@ -132,6 +121,13 @@ class CatanController:
             textButton.resetButton()
 
     def _playerTrade(self, flags, text):
+        """
+        handles player trade, which goes
+        chosing a player to trade with -> asking for a trade -> accepting a trade
+        :param flags:
+        :param text:
+        :return:
+        """
         if not flags["choosePlayerPhase"]:
             print("Who do you want to trade with?")
             for i, player in enumerate(self.players):
@@ -203,14 +199,22 @@ class CatanController:
         return -1
 
     def _portTrade(self, flags, text):
-        if text == "pt": #A little different then my previous trade phase, as I have a text check instead of a flag check
-            tradesAvailable = [settlement.trade for settlement in self.currentPlayer.settlementNodesOwned if settlement.trade != None]
+        """
+        A little different then my previous trade phase, as I have a text check instead of a flag check
+        similar idea as player trade, except with an AI port
+        :param flags:
+        :param text:
+        :return:
+        """
+        if text == "pt":
+            tradesAvailable = [settlement.trade for settlement in self.currentPlayer.settlementNodesOwned if
+                               settlement.trade != None]
             tradesAvailable += ["4:1"] #always can do a 4-1 option
             print(f"trades Available {tradesAvailable}")
             print(f"Which trade do you want? (enter 1 for the first trade, 2 for the second etc)")
-            # self.flags["choosePortPhase"] = True
         elif not flags["choosePortPhase"]:
-            # If the text is only 1 character, and that character is between 0 and 6 (since you can only have 5 + 1 free trade)
+            # Player will pick the index of the trade they want.
+            # the trade will be between 0 and 6 (since you can only have 5 + 1 free trade)
             if len(text) == 1 and ord(text) >= 48 and ord(text) <= 54:
                 selection = int(text) - 1
                 trades = [settlement.trade for settlement in self.currentPlayer.settlementNodesOwned if
@@ -236,7 +240,7 @@ class CatanController:
             else:
                 print(f"{text} is not a number between 1-7")
         elif not flags["makeTradePhase"]:
-            # Should either be in the format of ore || ore:lumber
+            # Should either be in the format of ore || ore:lumber depending on if its a specific trade of a general trade
             trade = self.tradeBuffer[0]
             if len(trade) == 2:
                 try:
@@ -302,32 +306,59 @@ class CatanController:
                 print("Do you want to build a road, settlement, city, or devCard?")
 
     def _moveRobber(self, flags, text):
+        """
+        Moves the robber to the desired location if valid. IF there are nearby players, choose one to steal 1 random
+        resource from
+        :param flags:
+        :param text:
+        :return:
+        """
+
         try:
             #FIXME: instead of checking for cords, just allow the player to click on the tile where they want to move the
             #robber
-            cords = text.split(",")
-            if self._validCords(cords):
-                x,y = int(cords[0]), int(cords[1])
-                self.board._setRobber([x,y])
-                print(f"Placed the robber at tile {[x,y]}")
+            if flags["steal"]:
+                # the player who is choosing to steal has to input a name
+                found_player = False
+                for player in self.player_to_steal_buffer:
+                    if text == player.name:
+                        found_player = True
+                        resource_stolen = player.stolen()
+                        if resource_stolen == -1:
+                            print("That player had no resources to steal")
+                        else:
+                            print(f"You stole {resource_stolen}")
+                            self.currentPlayer.totalResources[resource_stolen] += 1
 
-                #Find a player you can to steal from
-                players = self._findNeighboringPlayers((x, y))
-                if len(players) == 0:
-                    flags["robber"] = False
-                else:
-                    allPlayers = ""
-                    for player in players:
-                        allPlayers += "Player:" + player.name
-                        allPlayers += "\n"
-                    print(allPlayers)
-                    print("who do you want to steal from?")
+                        flags["robber"] = False
+                        flags["steal"] = False
+                if found_player is False:
+                    raise InvalidRobberError(f"{text} is not the name of a nearby player")
+
             else:
-                raise InvalidRobberError("Cords not within 1,1 or 5,3 ")
+                cords = text.split(",")
+                if self._validCords(cords):
+                    x,y = int(cords[0]), int(cords[1])
+                    self.board._setRobber([x,y])
+                    print(f"Placed the robber at tile {[x,y]}")
+
+                    #Find a player you can to steal from
+                    self.player_to_steal_buffer = self._findNeighboringPlayers((x, y))
+                    if len(self.player_to_steal_buffer) == 0:
+                        flags["robber"] = False
+                    else:
+                        allPlayers = ""
+                        for player in self.player_to_steal_buffer:
+                            allPlayers += "Player:" + player.name
+                            allPlayers += "\n"
+                        print(allPlayers)
+                        print("who do you want to steal from?")
+                        flags["steal"] = True
+                else:
+                    raise InvalidRobberError("Cords not within 1,1 or 5,3 ")
 
         except (ValueError, InvalidRobberError) as e:
             print(e.message)
-            print("Not valid tile location ie (1,1 or 2,3)")
 
     def endTurn(self, flags):
         self._resetFlags(flags)
@@ -338,6 +369,12 @@ class CatanController:
         self.currentPlayer = self.players[self.currentTurn - 1]
 
     def _findNeighboringPlayers(self, cords):
+        """
+        Finds neighboring players by first finding the surronding settlement nodes, and then seeing if players own those
+        nodes
+        :param cords:
+        :return:
+        """
         surrondingnodes = self.board.board[cords[0]][cords[1]].vertices
         surrondingSettlements = []
         for node in surrondingnodes:
@@ -389,6 +426,7 @@ class CatanController:
         self.printed = False
         self.tradeBuffer.clear()
         flags["robber"] = False
+        flags["steal"] = False
     def _resetTradeFlags(self, flags):
         flags["tradePhase"] = False
         flags["playerTrade"] = False
@@ -403,6 +441,6 @@ class CatanController:
     def _getPlayers(self, numPlayers):
         #FIXME actually write this function, for now manually add players
         playerList = []
-        playerList.append(Player(arcade.color.BLUE, "Blue"))
-        playerList.append(Player(arcade.color.RED, "Red"))
+        playerList.append(Player(arcade.color.BLUE, "blue"))
+        playerList.append(Player(arcade.color.RED, "red"))
         return playerList

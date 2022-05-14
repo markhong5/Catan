@@ -2,7 +2,7 @@ class SettlementNode:
     """
     A settlement node is a node that lies around the Tiles
     Settlement Nodes come in 2 types "Settlement" and "Road"
-        FIXME: This is dumb. Roads should be there own class
+        FIXME: Roads should be there own class
         There should also be an enum for this
     resources: A set of resourceTiles that surronds the settlement node
     trade: if a Settlement has a trade, represent it
@@ -16,7 +16,6 @@ class SettlementNode:
         self.resources = resources
         self.isOwened = isOwened
         self.isCity = isCity
-        self.next = None
 
 
 

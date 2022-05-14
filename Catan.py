@@ -26,21 +26,7 @@ PLAYERCOLORS = {
     3:arcade.color.PURPLE,
 }
 DEBUG = False
-"""
-TODO: Clean and comment code
-#FIXME: Add port functionality and draw the ports on the map
-    #Done, but could use tests to make sure that the ports shown are actually the correct ports
-    #Done
-#FIXME: Add the ability to trade to others
-    #Done
-#FIXME: Add the ability to build a settlement/road/devcard/city
-    #need costs for buildings and to go back in case there is an invalid trade
-    #need to add dev cards
-#FIXME: Add dev cards and their functionality
-#FIXME: Make the robber visible on the tiles (and allow the player to choose where to place the robber)
-#FIXME: change the color of 6 and 8 to a red text
-#FIXME: allow My version of CATAN to be played over the internet (LAST THING TO DO)
-"""
+
 class getTextButton(arcade.gui.UIFlatButton):
     """
     This button is linked to a UIInputBox, which will save the text inputed after click
@@ -57,7 +43,10 @@ class getTextButton(arcade.gui.UIFlatButton):
         self.clickedButton = False
         self.text = ""
     def on_click(self):
-        #Start Trade -> while you haven't clicked on button, do nothing -> when you do click on button run the trade and unset clicked on button
+        """
+        returns the text in the text box.
+        :return:
+        """
         if DEBUG:
             print(f"clicked on box:{self.inputBox.text}")
         self.text = self.inputBox.text
@@ -83,6 +72,9 @@ class HexagonGenerator:
             yield x, y
 
 class Catan(arcade.View):
+    #TODO: Implement cost for buildings
+    #TODO: implement DevCard functionality
+    #TODO: Implement the 10 victory points victory
     def __init__(self):
         super().__init__()
         arcade.set_background_color(arcade.color.OCEAN_BOAT_BLUE)
@@ -92,11 +84,7 @@ class Catan(arcade.View):
         self.settlementMap = {} #maps cordinates with its appropriate node number
 
         self.gameController = CatanController(self.board, self.graph, 2)
-        #FIXME: REMOVE THESE LINE OF CODE WHEN I CAN SPECIFY THE NUMBER OF PLAYERS
-        # self.players.append(Player(arcade.color.BLUE))
-        # self.players.append(Player(arcade.color.RED))
-        # self.currentTurn = 1 #keeps track of the current turn, will loop around once it hits the last Player
-        # self.currentPlayer = self.players[0]
+        #TODO: make it so that you specify the number of players
         #These flags are for the on_update() function, controling when an update occurs
         #FIXME: Make these flags into states
         self.flags ={
@@ -104,6 +92,7 @@ class Catan(arcade.View):
             "startTurn":True,
             "setUpPhase": True,
             "robber" : False,
+            "steal":False,
             "canPlaceSettlement":False,
             "placedSettlement":False,
             "canPlaceRoad": False,
@@ -136,7 +125,6 @@ class Catan(arcade.View):
         self.ui_manager.purge_ui_elements()
         #Todo get rid of these preset values
         uiInputBox = arcade.gui.UIInputBox(center_x=300, center_y=100,width=600,text="", id=1)
-        # uiInputBox.cursor_index = 20
         self.ui_manager.add_ui_element(uiInputBox)
         textButton = getTextButton(center_x=650, center_y=100, width=100, input_box=uiInputBox)
         self.ui_manager.add_ui_element(textButton)
@@ -155,26 +143,25 @@ class Catan(arcade.View):
     def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
         """
         if you are building a settlement, click a settlement node and it will check if you can build a settlement there
-        Same idea with roads
+
+        For roads, click on 2 settlement nodes. If they are valid settlement nodes, then it will create a road between them
+
         :return:
         """
-        #FIXME: locks the game if you fail to build a city/settlement
         if self.flags["canPlaceSettlement"]:
             try:
                 for cord in self.settlementMap.keys():
                     x2, y2 = cord
                     if math.sqrt((x - x2) * (x - x2) + (y - y2) * (y - y2)) < 7:
-                        # node = self.graph.nodeMap[self.settlementMap[cord]]
                         self.gameController.currentPlayer.placeSettlement(self.settlementMap[cord], self.graph, self.flags["setUpPhase"])
                         print(f"placed Settlement at node {self.settlementMap[cord]}")
-                        #FIXME perhaps this should be a named tuple?
                         self.settlementsToDraw.append((x2, y2, 7, self.gameController.currentPlayer.color))
                         self.flags["canPlaceSettlement"] = False
                         self.flags["placedSettlement"] = True
                         self.gameController.printed = False
                         break
-                #Didn't click on a node
-                else:
+
+                else: #failed to click on a node
                     print("Click on one of the nodes")
             except InvalidSettlementError as e:
                 print(e.message)
@@ -205,7 +192,6 @@ class Catan(arcade.View):
                     print(e.message)
                     print("Click another 2 Roads")
                 self.roadBuffer = []
-        #FIXME: REMOVE currentPlayer When I get there
         if self.flags["upgradeCity"]:
             try:
                 for cord in self.settlementMap.keys():
@@ -215,7 +201,6 @@ class Catan(arcade.View):
                         currentPlayer = self.gameController.currentPlayer
                         currentPlayer.upgradeSettlementToCity(node)
                         print(f"placed City at node {self.settlementMap[cord]}")
-                        #FIXME perhaps this should be a named tuple?
                         self.citiesToDraw.append((x2, y2, 15, currentPlayer.color))
                         self.flags["upgradeCity"] = False
                         break
@@ -230,7 +215,6 @@ class Catan(arcade.View):
         """Main game logic"""
         if self.flags["setUpPhase"]:
             self.gameController.setUpPhase(self.flags)
-            #self._setUpPhase()
         else:
             self.gameController.mainGame(self.flags, self.ui_manager.find_by_id("button"))
 
@@ -258,7 +242,6 @@ class Catan(arcade.View):
                 hexagonGen = HexagonGenerator(HEXAGON_SIZE, newX + (hexagonPoints[2][0] - hexagonPoints[0][0]) * i, newY)
                 hexagon = hexagonGen()
                 cords = list(hexagon)
-                # arcade.draw_polygon_outline(cords, arcade.color.BLACK)
                 self._drawTile(cords,self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart),self._getTileIsRobber(boardStart))
                 self.tileCordinates[totalTiles] = cords
                 totalTiles += 1
@@ -275,11 +258,9 @@ class Catan(arcade.View):
         previousXValue.pop()
         newX = previousXValue.pop()
         for y in range(2):
-
             hexagonGen = HexagonGenerator(HEXAGON_SIZE, newX, newY)
             hexagon = hexagonGen()
             hexagonPoints = list(hexagon)
-            # arcade.draw_polygon_outline(hexagonPoints, arcade.color.BLACK)
             self._drawTile(hexagonPoints, self._getResourceTileColor(boardStart), self._getResourceTileNum(boardStart),self._getTileIsRobber(boardStart))
 
             self.tileCordinates[totalTiles] = hexagonPoints
@@ -403,7 +384,7 @@ class Catan(arcade.View):
                 settlementSpots += 2
 
     def _drawPort(self, cord1, cord2, trade, direction):
-        #FIXME: my math for making the 2d triangles is not correct, but functional
+        #FIXME: my math for making the 2d triangles is not perfect, but functional
         """
         Tries to make an equalaterial triangle from 2 cordinates, putting down the text of my port
         :param cord1: cordinate of the first dot
